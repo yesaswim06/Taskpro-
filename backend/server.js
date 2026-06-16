@@ -13,7 +13,9 @@ dotenv.config();
 const app = express();
 
 // 3. Middlewares
-app.use(cors());
+app.use(cors({
+  origin: "*" 
+}));
 app.use(express.json());
 
 // 4. Database Setup
