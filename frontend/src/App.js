@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 
 // Replace the local URL with your new Render URL
-const API = "https://taskpro-backend-j936.onrender.com";
+const API = "https://taskpro-backend-j936.onrender.com/api";
 
 // --- SUB-COMPONENT: NAVIGATION ---
 const Navigation = ({ user, darkMode, setDarkMode, handleLogout, selectedAvatar, themeColor, themes, setShowProfile, showProfile }) => (
