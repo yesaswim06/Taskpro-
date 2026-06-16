@@ -73,7 +73,7 @@ async function main() {
   try {
     await client.connect();
     db = client.db(dbName);
-    console.log("✅ SUCCESS: Connected to Local MongoDB");
+    console.log("✅ SUCCESS: Connected to MongoDB Cloud (Atlas)");
     app.listen(5000, () => console.log("🚀 Server running on port 5000"));
   } catch (error) {
     console.error("❌ DB ERROR:", error);
