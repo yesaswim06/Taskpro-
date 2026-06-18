@@ -13,8 +13,11 @@ dotenv.config();
 const app = express();
 
 // 3. Middlewares
+// REPLACE your old app.use(cors(...)) with this:
 app.use(cors({
-  origin: "*" 
+  origin: "*", // This allows Netlify, Vercel, and Localhost to all work at once
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "x-auth-token"]
 }));
 app.use(express.json());
 
