@@ -20,20 +20,43 @@ const dbName = "StudentTaskDB";
 let db;
 
 // --- EMAIL ENGINE ---
-// --- UPDATED CLOUD-OPTIMIZED EMAIL ENGINE ---
+// --- HARDENED CLOUD-OPTIMIZED EMAIL ENGINE ---
 const transporter = nodemailer.createTransport({
+  pool: true,                // Use pooled connection to avoid repeat handshakes
   host: "smtp.gmail.com",
-  port: 465,
-  secure: true, // Use SSL
+  port: 465,                 // Port 465 (SSL) is usually more stable on Railway
+  secure: true,              // True for 465, false for 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-  // This forces the connection to stay stable on cloud networks
   tls: {
-    rejectUnauthorized: false
-  }
+    rejectUnauthorized: false // Bypasses SSL certificate issues in cloud containers
+  },
+  connectionTimeout: 15000,   // Wait 15 seconds before timing out
 });
+
+// --- ADD THIS LOG TO YOUR main() FUNCTION TO DEBUG ---
+async function main() {
+  try {
+    await client.connect();
+    db = client.db(dbName);
+    console.log("✅ CLOUD DB CONNECTED");
+
+    // TEST EMAIL CONNECTION ON STARTUP
+    transporter.verify((error, success) => {
+      if (error) {
+        console.error("❌ EMAIL SERVICE ERROR:", error.message);
+      } else {
+        console.log("✅ EMAIL SERVER IS READY TO DISPATCH");
+      }
+    });
+
+    app.listen(process.env.PORT || 5000, "0.0.0.0", () => {
+      console.log("🚀 Server spinning on Railway");
+    });
+  } catch (error) { console.error("❌ DB ERROR:", error); }
+}
 
 const sendTaskEmail = async (userEmail, userName, task) => {
   const gCalTitle = encodeURIComponent(task.title);
