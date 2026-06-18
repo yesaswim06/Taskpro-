@@ -130,10 +130,11 @@ app.post("/api/auth/login", async (req, res) => {
   } catch (err) { res.status(500).json({ msg: "Login failed" }); }
 });
 
+// Add this route to your backend/server.js
 app.put("/api/auth/update-profile", async (req, res) => {
   try {
     const token = req.header("x-auth-token");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, "secret_key");
     const { name, themeColor, avatarSeed } = req.body;
     
     await db.collection("users").updateOne(
@@ -141,7 +142,9 @@ app.put("/api/auth/update-profile", async (req, res) => {
       { $set: { name, themeColor, avatarSeed } }
     );
     res.json({ msg: "Profile Synced to Cloud" });
-  } catch (err) { res.status(500).json({ msg: "Update failed" }); }
+  } catch (err) {
+    res.status(500).json({ msg: "Update failed" });
+  }
 });
 
 app.get("/api/tasks", async (req, res) => {
