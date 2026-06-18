@@ -31,17 +31,33 @@ const sendTaskEmail = async (userEmail, userName, task) => {
   const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${gCalTitle}&dates=${gCalDate}/${gCalDate}`;
 
   const mailOptions = {
-    from: `"TaskPro" <${process.env.EMAIL_USER}>`,
-    to: userEmail,
-    subject: `📌 TaskPro: New Assignment Deployed!`,
-    html: `<div style="font-family:sans-serif;padding:20px;border:1px solid #6366f1;border-radius:15px;">
-            <h2>Hello ${userName}!</h2>
-            <p>Task: <b>${task.title}</b></p>
-            <p>Priority: ${task.priority}</p>
-            <a href="${calendarUrl}" style="background:#6366f1;color:white;padding:10px 20px;text-decoration:none;border-radius:8px;">Add to Calendar</a>
-          </div>`
+    from: `"TaskPro Support" <${process.env.EMAIL_USER}>`,
+    to: userEmail, // Sends to the student who registered
+    subject: `📌 New TaskPro Assignment: ${task.title}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px; border: 1px solid #6366f1; border-radius: 15px;">
+        <h2 style="color: #6366f1;">Hello ${userName}!</h2>
+        <p>A new project has been added to your dashboard.</p>
+        <div style="background: #f8fafc; padding: 15px; border-radius: 10px;">
+            <p><strong>Task:</strong> ${task.title}</p>
+            <p><strong>Priority:</strong> ${task.priority}</p>
+            <p><strong>Deadline:</strong> ${new Date(task.dueDate).toLocaleDateString()}</p>
+        </div>
+        <br/>
+        <a href="${calendarUrl}" style="background: #6366f1; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+          Add to Google Calendar
+        </a>
+      </div>
+    `
   };
-  try { await transporter.sendMail(mailOptions); } catch (err) { console.error("Mail Error"); }
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("✅ Email sent successfully:", info.response);
+  } catch (err) {
+    console.error("❌ NODEMAILER ERROR:", err.message);
+    // This will now show up in your Railway 'Deploy Logs'
+  }
 };
 
 // --- DB CONNECTION & START ---
