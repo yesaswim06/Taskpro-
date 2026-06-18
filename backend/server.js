@@ -37,7 +37,7 @@ const sendTaskEmail = async (userEmail, userName, task) => {
     subject: `📌 TaskPro Assignment: ${task.title}`,
     html: `<div style="font-family:sans-serif;padding:20px;border-radius:15px;border:1px solid #6366f1;">
             <h2>Hi ${userName}!</h2>
-            <p>New task added with <b>${task.priority}</b> priority.</p>
+            <p>New task added </p>
             <p>Description: ${task.description || "N/A"}</p>
             <a href="${gLink}" style="background:#6366f1;color:white;padding:10px 20px;text-decoration:none;border-radius:8px;display:inline-block;margin-top:10px;">Add to Calendar</a>
           </div>`
