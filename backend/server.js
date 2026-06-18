@@ -19,12 +19,14 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "x-auth-token"]
 }));
+
 app.use(express.json());
 
 // 4. Database Setup
 const url = process.env.MONGO_URI;
 const client = new MongoClient(url);
 const dbName = "StudentTaskDB";
+
 let db;
 
 // 5. Email Configuration
