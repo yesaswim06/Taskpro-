@@ -20,9 +20,19 @@ const dbName = "StudentTaskDB";
 let db;
 
 // --- EMAIL ENGINE ---
+// --- UPDATED CLOUD-OPTIMIZED EMAIL ENGINE ---
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true, // Use SSL
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  // This forces the connection to stay stable on cloud networks
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 const sendTaskEmail = async (userEmail, userName, task) => {
