@@ -4,7 +4,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Moon, Sun, Plus, Trash2, Bell, LogOut, Calendar, Zap, Search, Timer, 
-  Trophy, Tag, Check, User, Palette, Star, X, Settings, Info, Mail, ExternalLink, Edit3, Quote 
+  Trophy, Tag, Check, User, Palette, Star, X, Settings, Info, Mail, Phone, ExternalLink, Edit3, Quote 
 } from 'lucide-react';
 
 const API = "https://taskpro.up.railway.app/api";
@@ -21,7 +21,7 @@ const AppContent = () => {
   const [themeColor, setThemeColor] = useState(localStorage.getItem('themeColor') || 'indigo');
   const [selectedAvatar, setSelectedAvatar] = useState(localStorage.getItem('userAvatar') || 'Felix');
   
-  // UI States
+  // UI & Form States
   const [showProfile, setShowProfile] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -35,7 +35,7 @@ const AppContent = () => {
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc, setTaskDesc] = useState('');
   const [taskDate, setTaskDate] = useState('');
-  const [priority, setPriority] = useState('Medium');
+  const [priority, setPriority] = useState('Medium'); // Fixed: Used below
 
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -46,6 +46,12 @@ const AppContent = () => {
     emerald: "text-emerald-500 bg-emerald-600 border-emerald-500 ring-emerald-500 shadow-emerald-500/20",
     rose: "text-rose-500 bg-rose-600 border-rose-500 ring-rose-500 shadow-rose-500/20",
     amber: "text-amber-500 bg-amber-600 border-amber-500 ring-amber-500 shadow-amber-500/20"
+  };
+
+  // Fixed: welcomeData logic moved inside component scope
+  const welcomeData = {
+    greet: new Date().getHours() < 12 ? "Good Morning" : new Date().getHours() < 17 ? "Good Afternoon" : "Good Evening",
+    quote: "Precision is the key to student success."
   };
 
   const loadTasks = useCallback(async (token) => {
@@ -69,7 +75,6 @@ const AppContent = () => {
     return () => clearInterval(timer);
   }, [isTimerRunning, timeLeft]);
 
-  // --- SAVE EVERYTHING TO DB ---
   const syncProfileToCloud = async (n, t, a) => {
     const token = localStorage.getItem('token');
     try {
@@ -92,7 +97,7 @@ const AppContent = () => {
       setUser(res.data.user);
       setThemeColor(res.data.user.themeColor || 'indigo');
       setSelectedAvatar(res.data.user.avatarSeed || 'Felix');
-      navigate('/'); // Go to dashboard
+      navigate('/');
     } catch (err) { alert("Auth Failed: Check credentials or Register first!"); }
   };
 
@@ -106,13 +111,6 @@ const AppContent = () => {
     alert("TaskPro: Notification & Calendar Link Sent to Email!");
   };
 
-  const getWelcomeData = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return { greet: "Good Morning", quote: "Win the morning, win the day." };
-    if (hour < 17) return { greet: "Good Afternoon", quote: "Stay focused, stay consistent." };
-    return { greet: "Good Evening", quote: "Rest well, plan for tomorrow." };
-  };
-
   const filteredTasks = tasks.filter(t => t.title.toLowerCase().includes(searchQuery.toLowerCase()) && (filter === 'All' ? true : t.status === filter));
   const progress = tasks.length > 0 ? (tasks.filter(t => t.status === 'Completed').length / tasks.length) * 100 : 0;
 
@@ -124,8 +122,9 @@ const AppContent = () => {
             <Zap fill="currentColor" size={28}/> TaskPro
           </Link>
           <div className="hidden md:flex gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
-             <Link to="/about" className="hover:text-indigo-500 transition flex items-center gap-2"><Info size={14}/> About</Link>
-             <Link to="/contact" className="hover:text-indigo-500 transition flex items-center gap-2"><Mail size={14}/> Support</Link>
+             <Link to="/" className="hover:text-indigo-500 transition flex items-center gap-2 font-bold"><Zap size={14}/> Dashboard</Link>
+             <Link to="/about" className="hover:text-indigo-500 transition flex items-center gap-2 font-bold"><Info size={14}/> About</Link>
+             <Link to="/contact" className="hover:text-indigo-500 transition flex items-center gap-2 font-bold"><Mail size={14}/> Support</Link>
           </div>
         </div>
         <div className="flex items-center gap-5">
@@ -148,17 +147,17 @@ const AppContent = () => {
           <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 50 }} className="fixed right-6 top-24 w-80 glass p-8 rounded-[3rem] z-[100] shadow-2xl border dark:border-white/10">
             <div className="flex justify-between items-center mb-6">
               <h4 className="text-xs font-black uppercase text-gray-400 flex items-center gap-2"><Settings size={14}/> Customization</h4>
-              <X size={20} className="cursor-pointer text-red-500" onClick={() => setShowProfile(false)} />
+              <X size={20} className="cursor-pointer text-gray-500 hover:text-red-500" onClick={() => setShowProfile(false)} />
             </div>
-            <div className="mb-6 bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl">
+            <div className="mb-6 bg-slate-100 dark:bg-slate-800 p-4 rounded-2xl text-white">
               {isEditingName ? (
                 <div className="flex gap-2">
-                  <input className="bg-transparent border-b border-indigo-500 outline-none text-sm w-full dark:text-white font-bold" value={newName} onChange={e => setNewName(e.target.value)} />
+                  <input className="bg-transparent border-b border-indigo-500 outline-none text-sm w-full font-bold" value={newName} onChange={e => setNewName(e.target.value)} />
                   <Check size={18} className="text-green-500 cursor-pointer" onClick={() => { setUser({...user, name: newName}); setIsEditingName(false); syncProfileToCloud(newName, themeColor, selectedAvatar); }} />
                 </div>
               ) : (
                 <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold dark:text-white">{user.name}</span>
+                  <span className="text-sm font-bold">{user.name}</span>
                   <Edit3 size={14} className="text-indigo-500 cursor-pointer" onClick={() => { setIsEditingName(true); setNewName(user.name); }} />
                 </div>
               )}
@@ -182,21 +181,11 @@ const AppContent = () => {
 
       <Routes>
         <Route path="/about" element={<div className="p-20 text-center dark:text-white"><h1 className="text-5xl font-black">Internship Build v1.0</h1><p className="mt-4 text-gray-500 max-w-xl mx-auto italic">Modern Student Workspace.</p></div>} />
-        
-        <Route path="/contact" element={
-          <div className="max-w-4xl mx-auto py-20 px-6 grid md:grid-cols-2 gap-12 text-white">
-            <div>
-              <h2 className="text-5xl font-black mb-6">Support</h2>
-              <p className="flex items-center gap-3 font-bold text-gray-500"><Mail className="text-indigo-500"/> myselfadmin123@gmail.com</p>
-            </div>
-            <form className="glass p-10 rounded-[3rem] space-y-4" onSubmit={(e)=>{e.preventDefault(); alert("Sent!")}}>
-              <input className="w-full p-4 glass rounded-2xl outline-none" placeholder="Student Name" required />
-              <input className="w-full p-4 glass rounded-2xl outline-none" placeholder="University Email" type="email" required />
-              <textarea className="w-full p-4 glass rounded-2xl outline-none h-32" placeholder="Context Title & Description..." required />
-              <button className="w-full bg-indigo-600 text-white p-4 rounded-2xl font-black">Submit</button>
-            </form>
-          </div>
-        } />
+        <Route path="/contact" element={<div className="max-w-4xl mx-auto py-20 px-6 text-white text-center">
+            <Mail size={40} className="mx-auto text-indigo-500 mb-4" />
+            <h2 className="text-5xl font-black mb-6">Support Center</h2>
+            <p className="font-bold text-gray-500">Email: myselfadmin123@gmail.com</p>
+        </div>} />
 
         <Route path="/login" element={user ? <Navigate to="/" /> : (
           <div className="min-h-[85vh] flex items-center justify-center p-6">
@@ -206,7 +195,7 @@ const AppContent = () => {
                 {isRegister && <input className="w-full p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl outline-none dark:text-white" placeholder="Full Name" onChange={e => setAuthForm({...authForm, name: e.target.value})} required />}
                 <input className="w-full p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl outline-none dark:text-white" placeholder="Email" type="email" onChange={e => setAuthForm({...authForm, email: e.target.value})} required />
                 <input className="w-full p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl outline-none dark:text-white" placeholder="Password" type="password" onChange={e => setAuthForm({...authForm, password: e.target.value})} required />
-                <button className={`w-full ${themes[themeColor].split(' ')[1]} text-white p-4 rounded-2xl font-black shadow-xl mt-4`}>{isRegister ? "Join" : "Sign In"}</button>
+                <button className={`w-full ${themes[themeColor].split(' ')[1]} text-white p-4 rounded-2xl font-black shadow-xl mt-4`}>Sign {isRegister ? "Up" : "In"}</button>
               </form>
               <button onClick={() => setIsRegister(!isRegister)} className="mt-6 text-[10px] font-black uppercase text-gray-400 underline">{isRegister ? "Go to Login" : "Create Workspace"}</button>
             </motion.div>
@@ -215,7 +204,7 @@ const AppContent = () => {
 
         <Route path="/" element={!user ? (
           <div className="min-h-[85vh] flex flex-col items-center justify-center text-center px-6">
-            <h1 className="text-9xl font-black mb-6 dark:text-white tracking-tighter leading-none italic">TASK<span className="text-indigo-600">PRO</span></h1>
+            <h1 className="text-9xl font-black mb-6 dark:text-white tracking-tighter italic">TASK<span className="text-indigo-600">PRO</span></h1>
             <Link to="/login" className="bg-indigo-600 text-white px-12 py-6 rounded-[2.5rem] font-black text-xl shadow-2xl hover:scale-110 transition-all">Get Access</Link>
           </div>
         ) : (
@@ -232,7 +221,12 @@ const AppContent = () => {
                 <h3 className="font-black text-xs uppercase tracking-widest text-indigo-500 flex items-center gap-2"><Plus size={16}/> New Task</h3>
                 <input className="w-full p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl outline-none dark:text-white focus:ring-2 ring-indigo-500 transition-all" placeholder="Project Name" value={taskTitle} onChange={e => setTaskTitle(e.target.value)} required />
                 <textarea className="w-full p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl outline-none dark:text-white h-24" placeholder="Description & details..." value={taskDesc} onChange={e => setTaskDesc(e.target.value)} />
-                <input type="date" className="w-full p-4 bg-gray-50 dark:bg-slate-900 rounded-2xl outline-none dark:text-white" value={taskDate} onChange={e => setTaskDate(e.target.value)} required />
+                <div className="relative"><Calendar className="absolute left-4 top-4 text-gray-400" size={16}/><input type="date" className="w-full p-4 pl-12 bg-gray-50 dark:bg-slate-900 rounded-2xl outline-none dark:text-white" value={taskDate} onChange={e => setTaskDate(e.target.value)} required /></div>
+                <div className="flex gap-2">
+                   {['Low', 'Medium', 'High'].map(p => (
+                     <button key={p} type="button" onClick={() => setPriority(p)} className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase transition-all ${priority === p ? themes[themeColor].split(' ')[1] + ' text-white' : 'bg-gray-100 dark:bg-slate-800 text-gray-500'}`}>{p}</button>
+                   ))}
+                </div>
                 <button className={`w-full ${themes[themeColor].split(' ')[1]} text-white p-5 rounded-2xl font-black text-lg shadow-xl`}>Deploy Task</button>
               </form>
             </div>
@@ -241,7 +235,7 @@ const AppContent = () => {
               <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-xl border dark:border-white/5">
                 <div className="relative w-full md:w-96">
                   <Search className="absolute left-5 top-4 text-gray-500" size={20} />
-                  <input placeholder="Search projects..." className="w-full pl-14 p-4 glass rounded-[2rem] outline-none dark:text-white border dark:border-white/5" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                  <input placeholder="Search projects..." className="w-full pl-14 p-4 glass rounded-[2rem] outline-none dark:text-white" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                 </div>
                 <div className="flex bg-gray-100 dark:bg-slate-800 px-6 py-3 rounded-full border dark:border-white/5 gap-4 shadow-inner">
                    <Timer size={20} className={isTimerRunning ? "animate-pulse text-indigo-500" : "text-gray-500"}/>
@@ -256,31 +250,27 @@ const AppContent = () => {
               </div>
               <div className="space-y-4 pb-20">
                 <AnimatePresence mode='popLayout'>
-                  {filteredTasks.map(task => {
-                    const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'Completed';
-                    const pColor = task.priority === 'High' ? 'border-rose-500' : task.priority === 'Medium' ? 'border-amber-500' : 'border-emerald-500';
-                    const gUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${task.dueDate.replace(/-/g, '')}/${task.dueDate.replace(/-/g, '')}`;
-                    return (
-                      <motion.div key={task._id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-                        className={`glass p-8 rounded-[3rem] flex flex-col md:flex-row md:items-center justify-between gap-6 border-l-[16px] ${pColor} ${task.status === 'Completed' ? 'opacity-40 grayscale blur-[1px]' : ''} hover:shadow-2xl transition-all relative overflow-hidden`}
-                      >
-                        <div className="flex items-start gap-8">
-                           <button onClick={async () => { const s = task.status === 'Pending' ? 'Completed' : 'Pending'; await axios.put(`${API}/tasks/${task._id}`, { status: s }, { headers: {'x-auth-token': localStorage.getItem('token')} }); loadTasks(localStorage.getItem('token')); }} 
-                              className={`p-6 rounded-[2rem] shadow-inner ${task.status === 'Completed' ? themes[themeColor].split(' ')[1] + ' text-white shadow-xl' : 'bg-gray-100 dark:bg-slate-900 text-transparent hover:text-gray-400'}`}
-                           ><Check size={32} strokeWidth={4}/></button>
-                           <div className="flex flex-col">
-                              <h4 className="text-2xl font-black italic dark:text-white uppercase tracking-tighter">{task.title}</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1 mb-4 leading-relaxed">{task.description}</p>
-                              <div className="flex flex-wrap gap-4 items-center">
-                                 <span className={`text-[10px] font-black px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 text-gray-400 border dark:border-white/5 uppercase flex items-center gap-2 ${isOverdue ? 'bg-red-500 text-white animate-pulse' : ''}`}><Tag size={12}/> {new Date(task.dueDate).toLocaleDateString()}</span>
-                                 <a href={gUrl} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase text-indigo-500 hover:underline flex items-center gap-1"><ExternalLink size={12}/> Sync</a>
-                              </div>
-                           </div>
-                        </div>
-                        <button onClick={async () => { await axios.delete(`${API}/tasks/${task._id}`, { headers: {'x-auth-token': localStorage.getItem('token')} }); loadTasks(localStorage.getItem('token')); }} className="p-4 rounded-2xl text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white transition-all self-center shadow-xl"><Trash2 size={24}/></button>
-                      </motion.div>
-                    );
-                  })}
+                  {filteredTasks.map(task => (
+                    <motion.div key={task._id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+                      className={`glass p-8 rounded-[3rem] flex flex-col md:flex-row md:items-center justify-between gap-6 border-l-[16px] ${task.priority === 'High' ? 'border-rose-500' : task.priority === 'Medium' ? 'border-amber-500' : 'border-emerald-500'} ${task.status === 'Completed' ? 'opacity-40 grayscale blur-[1px]' : ''} hover:shadow-2xl transition-all relative overflow-hidden`}
+                    >
+                      <div className="flex items-start gap-8">
+                         <button onClick={async () => { const s = task.status === 'Pending' ? 'Completed' : 'Pending'; await axios.put(`${API}/tasks/${task._id}`, { status: s }, { headers: {'x-auth-token': localStorage.getItem('token')} }); loadTasks(localStorage.getItem('token')); }} 
+                            className={`p-6 rounded-[2rem] shadow-inner ${task.status === 'Completed' ? themes[themeColor].split(' ')[1] + ' text-white shadow-xl' : 'bg-gray-100 dark:bg-slate-900 text-transparent hover:text-gray-400 border dark:border-white/10'}`}
+                         ><Check size={32} strokeWidth={4}/></button>
+                         <div className="flex flex-col">
+                            <h4 className="text-2xl font-black italic dark:text-white uppercase tracking-tighter">{task.title}</h4>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1 mb-4 leading-relaxed">{task.description}</p>
+                            <div className="flex flex-wrap gap-4 items-center">
+                               <span className={`text-[10px] font-black px-4 py-1.5 rounded-full bg-slate-100 dark:bg-slate-900 text-gray-400 border dark:border-white/5 uppercase flex items-center gap-2`}><Tag size={12}/> {new Date(task.dueDate).toLocaleDateString()}</span>
+                               <a href={`https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${task.dueDate.replace(/-/g, '')}/${task.dueDate.replace(/-/g, '')}`} target="_blank" rel="noreferrer" className="text-[10px] font-black uppercase text-indigo-500 hover:underline flex items-center gap-1"><ExternalLink size={12}/> Sync</a>
+                            </div>
+                         </div>
+                      </div>
+                      <button onClick={async () => { await axios.delete(`${API}/tasks/${task._id}`, { headers: {'x-auth-token': localStorage.getItem('token')} }); loadTasks(localStorage.getItem('token')); }} className="p-4 rounded-2xl text-red-500 bg-red-500/10 hover:bg-red-500 hover:text-white transition-all self-center shadow-xl"><Trash2 size={24}/></button>
+                      <Phone className="absolute -right-4 -bottom-4 opacity-5 rotate-45" size={80}/>
+                    </motion.div>
+                  ))}
                 </AnimatePresence>
               </div>
             </div>
