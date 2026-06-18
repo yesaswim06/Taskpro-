@@ -6,30 +6,26 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 
-// 1. Load Config
+// 1. Initialize Configuration
 dotenv.config();
-
-// 2. Initialize App (This MUST be at the top)
 const app = express();
 
-// 3. Middlewares
-// REPLACE your old app.use(cors(...)) with this:
+// 2. FIX CORS (Allows Netlify to talk to Railway)
 app.use(cors({
-  origin: "*", // This allows Netlify, Vercel, and Localhost to all work at once
+  origin: "*", // Allows any website to access this API - best for internship demo
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "x-auth-token"]
 }));
 
 app.use(express.json());
 
-// 4. Database Setup
+// 3. Database Connection Constants
 const url = process.env.MONGO_URI;
 const client = new MongoClient(url);
 const dbName = "StudentTaskDB";
-
 let db;
 
-// 5. Email Configuration
+// 4. Email Transporter (Nodemailer)
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -38,11 +34,8 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-// ... existing imports (nodemailer, etc.)
-
-// --- IMPROVED EMAIL FUNCTION WITH CALENDAR LINK ---
+// 5. Email Function with Google Calendar Link
 const sendTaskEmail = async (userEmail, userName, task) => {
-  // Generate Calendar Link for Email
   const gCalTitle = encodeURIComponent(task.title);
   const gCalDate = task.dueDate.replace(/-/g, '') + "T090000Z";
   const calendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${gCalTitle}&dates=${gCalDate}/${gCalDate}`;
@@ -50,135 +43,139 @@ const sendTaskEmail = async (userEmail, userName, task) => {
   const mailOptions = {
     from: `"TaskPro Support" <${process.env.EMAIL_USER}>`,
     to: userEmail,
-    subject: `📌 New TaskPro Assignment: ${task.title}`,
+    subject: `📌 TaskPro: New Assignment Deployed!`,
     html: `
-      <div style="font-family: sans-serif; padding: 25px; border: 1px solid #e2e8f0; border-radius: 20px; max-width: 500px;">
-        <h2 style="color: #4f46e5;">Hello ${userName}!</h2>
-        <p>A new task has been deployed to your workspace.</p>
+      <div style="font-family: sans-serif; padding: 25px; border: 2px solid #6366f1; border-radius: 20px; max-width: 500px;">
+        <h2 style="color: #6366f1;">Hello ${userName}!</h2>
+        <p>A new project has been added to your dashboard.</p>
         <div style="background: #f8fafc; padding: 20px; border-radius: 15px; margin: 20px 0;">
             <p><strong>Project:</strong> ${task.title}</p>
             <p><strong>Priority:</strong> ${task.priority}</p>
             <p><strong>Deadline:</strong> ${new Date(task.dueDate).toLocaleDateString()}</p>
         </div>
-        <a href="${calendarUrl}" style="background: #4f46e5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">
+        <a href="${calendarUrl}" style="background: #6366f1; color: white; padding: 12px 25px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block;">
           Add to Google Calendar
         </a>
-        <p style="margin-top: 25px; font-size: 12px; color: #94a3b8;">TaskPro Ecosystem • Internship Final Build</p>
+        <p style="margin-top: 25px; font-size: 12px; color: #94a3b8;">TaskPro Ecosystem • Internship Build v1.0</p>
       </div>
     `
   };
   try {
     await transporter.sendMail(mailOptions);
     console.log(`📧 Email + Calendar Link sent to ${userEmail}`);
-  } catch (err) { console.error("❌ Email Error:", err.message); }
+  } catch (err) {
+    console.error("❌ Email failed:", err.message);
+  }
 };
 
-// ... Ensure Task POST route calls this ...
-
-// 6. DB Connection
+// 6. Connect to MongoDB and Start Server
 async function main() {
   try {
     await client.connect();
     db = client.db(dbName);
     console.log("✅ SUCCESS: Connected to MongoDB Cloud (Atlas)");
-    app.listen(5000, () => console.log("🚀 Server running on port 5000"));
+    
+    // Health Check Route
+    app.get("/", (req, res) => res.send("TaskPro API is Live and Running! ✅"));
+
+    app.listen(process.env.PORT || 5000, "0.0.0.0", () => {
+      console.log(`🚀 Server running on port ${process.env.PORT || 5000}`);
+    });
   } catch (error) {
-    console.error("❌ DB ERROR:", error);
+    console.error("❌ CONNECTION ERROR:", error);
   }
 }
 main();
 
-// --- 7. ROUTES (Now 'app' is initialized, so these will work) ---
+// --- 7. AUTH ROUTES ---
 
 app.post("/api/auth/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = { 
+    const result = await db.collection("users").insertOne({ 
       name, 
       email, 
-      password: hashedPassword, 
-      themeColor: 'indigo', 
-      avatarSeed: 'Felix' 
-    };
-    const result = await db.collection("users").insertOne(newUser);
+      password: hashedPassword,
+      themeColor: 'indigo',
+      avatarSeed: 'Felix'
+    });
     const token = jwt.sign({ id: result.insertedId }, process.env.JWT_SECRET);
     res.json({ token, user: { name, email, themeColor: 'indigo', avatarSeed: 'Felix' } });
   } catch (err) { res.status(500).json({ msg: "Register failed" }); }
-});
-
-app.put("/api/auth/update-name", async (req, res) => {
-  const token = req.header("x-auth-token");
-  const decoded = jwt.verify(token, "secret_key");
-  await db.collection("users").updateOne(
-    { _id: new ObjectId(decoded.id) },
-    { $set: { name: req.body.newName } }
-  );
-  res.json({ msg: "Name updated" });
 });
 
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await db.collection("users").findOne({ email });
-    if (!user || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ msg: "Invalid" });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(400).json({ msg: "Invalid Credentials" });
+    }
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     res.json({ 
       token, 
       user: { 
         name: user.name, 
         email: user.email, 
-        themeColor: user.themeColor || 'indigo', 
+        themeColor: user.themeColor || 'indigo',
         avatarSeed: user.avatarSeed || 'Felix' 
       } 
     });
   } catch (err) { res.status(500).json({ msg: "Login failed" }); }
 });
 
-// Add this route to your backend/server.js
+// Sync Name, Theme, and Avatar to Cloud
 app.put("/api/auth/update-profile", async (req, res) => {
   try {
     const token = req.header("x-auth-token");
-    const decoded = jwt.verify(token, "secret_key");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { name, themeColor, avatarSeed } = req.body;
     
     await db.collection("users").updateOne(
       { _id: new ObjectId(decoded.id) },
       { $set: { name, themeColor, avatarSeed } }
     );
-    res.json({ msg: "Profile Synced to Cloud" });
-  } catch (err) {
-    res.status(500).json({ msg: "Update failed" });
-  }
+    res.json({ msg: "Synced" });
+  } catch (err) { res.status(500).json({ msg: "Update failed" }); }
 });
 
+// --- 8. TASK ROUTES ---
+
 app.get("/api/tasks", async (req, res) => {
-  const token = req.header("x-auth-token");
-  if (!token) return res.status(401).send("No token");
-  const decoded = jwt.verify(token, "secret_key");
-  const tasks = await db.collection("tasks").find({ userId: new ObjectId(decoded.id) }).toArray();
-  res.json(tasks);
+  try {
+    const token = req.header("x-auth-token");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const tasks = await db.collection("tasks").find({ userId: new ObjectId(decoded.id) }).toArray();
+    res.json(tasks);
+  } catch (err) { res.status(401).send("Unauthorized"); }
 });
 
 app.post("/api/tasks", async (req, res) => {
-  const token = req.header("x-auth-token");
-  const decoded = jwt.verify(token, "secret_key");
-  const user = await db.collection("users").findOne({ _id: new ObjectId(decoded.id) });
-  
-  const newTask = { ...req.body, userId: new ObjectId(decoded.id), status: "Pending" };
-  const result = await db.collection("tasks").insertOne(newTask);
-  const savedTask = { ...newTask, _id: result.insertedId };
+  try {
+    const token = req.header("x-auth-token");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await db.collection("users").findOne({ _id: new ObjectId(decoded.id) });
+    
+    const newTask = { ...req.body, userId: new ObjectId(decoded.id), createdAt: new Date() };
+    const result = await db.collection("tasks").insertOne(newTask);
+    const savedTask = { ...newTask, _id: result.insertedId };
 
-  if (user) sendTaskEmail(user.email, user.name, savedTask);
-  res.json(savedTask);
+    if (user) sendTaskEmail(user.email, user.name, savedTask);
+    res.json(savedTask);
+  } catch (err) { res.status(500).json({ msg: "Error saving task" }); }
 });
 
 app.put("/api/tasks/:id", async (req, res) => {
-  await db.collection("tasks").updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status: req.body.status } });
-  res.json({ msg: "Updated" });
+  try {
+    await db.collection("tasks").updateOne({ _id: new ObjectId(req.params.id) }, { $set: { status: req.body.status } });
+    res.json({ msg: "Updated" });
+  } catch (err) { res.status(500).json({ msg: "Update failed" }); }
 });
 
 app.delete("/api/tasks/:id", async (req, res) => {
-  await db.collection("tasks").deleteOne({ _id: new ObjectId(req.params.id) });
-  res.json({ msg: "Deleted" });
+  try {
+    await db.collection("tasks").deleteOne({ _id: new ObjectId(req.params.id) });
+    res.json({ msg: "Deleted" });
+  } catch (err) { res.status(500).json({ msg: "Delete failed" }); }
 });
