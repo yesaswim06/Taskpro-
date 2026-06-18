@@ -86,11 +86,20 @@ main();
 // --- 7. ROUTES (Now 'app' is initialized, so these will work) ---
 
 app.post("/api/auth/register", async (req, res) => {
-  const { name, email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const result = await db.collection("users").insertOne({ name, email, password: hashedPassword });
-  const token = jwt.sign({ id: result.insertedId }, "secret_key");
-  res.json({ token, user: { name, email } });
+  try {
+    const { name, email, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = { 
+      name, 
+      email, 
+      password: hashedPassword, 
+      themeColor: 'indigo', 
+      avatarSeed: 'Felix' 
+    };
+    const result = await db.collection("users").insertOne(newUser);
+    const token = jwt.sign({ id: result.insertedId }, process.env.JWT_SECRET);
+    res.json({ token, user: { name, email, themeColor: 'indigo', avatarSeed: 'Felix' } });
+  } catch (err) { res.status(500).json({ msg: "Register failed" }); }
 });
 
 app.put("/api/auth/update-name", async (req, res) => {
@@ -104,11 +113,35 @@ app.put("/api/auth/update-name", async (req, res) => {
 });
 
 app.post("/api/auth/login", async (req, res) => {
-  const { email, password } = req.body;
-  const user = await db.collection("users").findOne({ email });
-  if (!user || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ msg: "Invalid" });
-  const token = jwt.sign({ id: user._id }, "secret_key");
-  res.json({ token, user: { name: user.name, email: user.email } });
+  try {
+    const { email, password } = req.body;
+    const user = await db.collection("users").findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) return res.status(400).json({ msg: "Invalid" });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    res.json({ 
+      token, 
+      user: { 
+        name: user.name, 
+        email: user.email, 
+        themeColor: user.themeColor || 'indigo', 
+        avatarSeed: user.avatarSeed || 'Felix' 
+      } 
+    });
+  } catch (err) { res.status(500).json({ msg: "Login failed" }); }
+});
+
+app.put("/api/auth/update-profile", async (req, res) => {
+  try {
+    const token = req.header("x-auth-token");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { name, themeColor, avatarSeed } = req.body;
+    
+    await db.collection("users").updateOne(
+      { _id: new ObjectId(decoded.id) },
+      { $set: { name, themeColor, avatarSeed } }
+    );
+    res.json({ msg: "Profile Synced to Cloud" });
+  } catch (err) { res.status(500).json({ msg: "Update failed" }); }
 });
 
 app.get("/api/tasks", async (req, res) => {
