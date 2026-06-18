@@ -7,12 +7,8 @@ import {
   Trophy, Tag, Check, User, Palette, Star, X, Settings, Info, Mail, ExternalLink, Edit3, Quote, Rocket, Shield, Cpu
 } from 'lucide-react';
 
-<<<<<<< HEAD
-const API = "https://taskpro-backend-j936.onrender.com/api";
-=======
-// Replace the local URL with your new Render URL
-const API = "taskpro.up.railway.app";
->>>>>>> 0c474150d4d57e5592ea375aa848fe389ecb228c
+// UPDATE THIS LINE at the top of App.js
+const API = "https://taskpro.up.railway.app/api";
 
 const AppContent = () => {
   const navigate = useNavigate();
