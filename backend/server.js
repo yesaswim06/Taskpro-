@@ -67,11 +67,21 @@ app.post("/api/auth/login", async (req, res) => {
   res.json({ token, user: { name: user.name, email: user.email, themeColor: user.themeColor, avatarSeed: user.avatarSeed } });
 });
 
+// --- PERMANENT PROFILE SYNC ROUTE ---
 app.put("/api/auth/update-profile", async (req, res) => {
-  const token = req.header("x-auth-token");
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  await db.collection("users").updateOne({ _id: new ObjectId(decoded.id) }, { $set: req.body });
-  res.json({ msg: "Synced" });
+  try {
+    const token = req.header("x-auth-token");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { name, themeColor, avatarSeed } = req.body;
+    
+    await db.collection("users").updateOne(
+      { _id: new ObjectId(decoded.id) },
+      { $set: { name, themeColor, avatarSeed } }
+    );
+    res.json({ msg: "Profile synced to Cloud Atlas" });
+  } catch (err) {
+    res.status(500).json({ msg: "Cloud sync failed" });
+  }
 });
 
 // TASK ROUTES
