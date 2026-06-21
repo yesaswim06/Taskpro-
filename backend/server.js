@@ -27,28 +27,26 @@ const transporter = nodemailer.createTransport({
   tls: { rejectUnauthorized: false }
 });
 
-const sendTaskEmail = async (userEmail, userName, task) => {
-  const gLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&details=${encodeURIComponent(task.description || '')}&dates=${task.dueDate.replace(/-/g, '')}/${task.dueDate.replace(/-/g, '')}`;
+const sendTaskEmail = async (toEmail, senderName, task) => {
+  const gLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${task.dueDate.replace(/-/g, '')}/${task.dueDate.replace(/-/g, '')}`;
   
   const mailOptions = {
     from: `"TaskPro Manager" <${process.env.EMAIL_USER}>`,
-    to: userEmail,
-    subject: `🚀 TaskPro: New Node Deployed - ${task.title}`,
+    to: toEmail, // Sends to the person delegated
+    subject: `🚀 TaskPro: New Node assigned to you by ${senderName}`,
     html: `
       <div style="font-family:sans-serif; padding:20px; border-radius:20px; border:1px solid #6366f1; max-width:600px;">
-        <h2 style="color:#6366f1;">Hello ${userName}!</h2>
-        <p>A new actionable item has been added to your ecosystem.</p>
+        <h2 style="color:#6366f1;">Action Required!</h2>
+        <p><b>${senderName}</b> has delegated a new task node to you in the TaskPro ecosystem.</p>
         <div style="background:#f8fafc; padding:20px; border-radius:15px; margin:20px 0; border-left:10px solid #6366f1;">
           <p><strong>Objective:</strong> ${task.title}</p>
-          <p><strong>Delegated To:</strong> ${task.assignedTo || "Self"}</p>
           <p><strong>Urgency:</strong> ${task.priority}</p>
-          <p><strong>Context:</strong> ${task.description || "N/A"}</p>
+          <p><strong>Details:</strong> ${task.description || "View in dashboard"}</p>
         </div>
-        <a href="${gLink}" style="background:#6366f1; color:white; padding:12px 25px; text-decoration:none; border-radius:10px; font-weight:bold; display:inline-block;">Add to Workspace Calendar</a>
+        <a href="${gLink}" style="background:#6366f1; color:white; padding:12px 25px; text-decoration:none; border-radius:10px; font-weight:bold; display:inline-block;">Add to My Calendar</a>
       </div>`
   };
-
-  transporter.sendMail(mailOptions).catch(err => console.log("Email Error Skip"));
+  transporter.sendMail(mailOptions).catch(err => console.log("Email Error"));
 };
 
 // --- 3. STARTUP ---
@@ -96,13 +94,29 @@ app.get("/api/tasks", async (req, res) => {
 });
 
 app.post("/api/tasks", async (req, res) => {
-  const token = req.header("x-auth-token");
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const user = await db.collection("users").findOne({ _id: new ObjectId(decoded.id) });
-  const newTask = { ...req.body, userId: new ObjectId(decoded.id), status: "To-Do", comments: [], createdAt: new Date() };
-  const result = await db.collection("tasks").insertOne(newTask);
-  res.json({ ...newTask, _id: result.insertedId });
-  if (user) sendTaskEmail(user.email, user.name, newTask);
+  try {
+    const token = req.header("x-auth-token");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await db.collection("users").findOne({ _id: new ObjectId(decoded.id) });
+
+    const newTask = { 
+      ...req.body, 
+      userId: new ObjectId(decoded.id), 
+      status: "To-Do",
+      comments: [],
+      createdAt: new Date() 
+    };
+
+    const result = await db.collection("tasks").insertOne(newTask);
+    const savedTask = { ...newTask, _id: result.insertedId };
+    
+    res.json(savedTask); 
+
+    // COLLABORATION WORKFLOW: If assigned to an email, send them the notification
+    const recipientEmail = req.body.assignedTo || user.email;
+    sendTaskEmail(recipientEmail, user.name, savedTask);
+
+  } catch (err) { res.status(500).send("Server Error"); }
 });
 
 app.put("/api/tasks/:id", async (req, res) => {
