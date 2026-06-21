@@ -16,6 +16,7 @@ const client = new MongoClient(url);
 const dbName = "StudentTaskDB";
 let db;
 
+// --- GMAIL CONFIGURATION ---
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -25,32 +26,38 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendTaskEmail = async (toEmail, senderName, task) => {
-  const gLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${task.dueDate.replace(/-/g, '')}/${task.dueDate.replace(/-/g, '')}`;
+  const gCalDate = task.dueDate.replace(/-/g, '') + "T090000Z";
+  const gLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${gCalDate}/${gCalDate}&details=${encodeURIComponent(task.description || '')}`;
+  
   const mailOptions = {
-    from: `"TaskPro Manager" <${process.env.EMAIL_USER}>`,
+    from: `"TaskPro" <${process.env.EMAIL_USER}>`,
     to: toEmail,
-    subject: `🚀 TaskPro: New Node assigned to you by ${senderName}`,
-    html: `<div style="font-family:sans-serif;padding:20px;border-radius:20px;border:1px solid #6366f1;">
-            <h2>Action Required!</h2>
-            <p><b>${senderName}</b> has delegated a new task node to you.</p>
-            <p>Objective: <b>${task.title}</b></p>
-            <p>Priority: ${task.priority}</p>
-            <a href="${gLink}" style="background:#6366f1;color:white;padding:12px 25px;text-decoration:none;border-radius:10px;display:inline-block;">Add to Calendar</a>
+    subject: `🚀 TaskPro Assignment Node: ${task.title}`,
+    html: `<div style="font-family:sans-serif;padding:30px;border-radius:25px;border:1px solid #6366f1;max-width:550px;background:#fcfcfc;">
+            <h2 style="color:#6366f1;margin-bottom:20px;">Task Deployed!</h2>
+            <p>A new actionable node has been assigned by <b>${senderName}</b>.</p>
+            <div style="background:#f1f5f9;padding:20px;border-radius:15px;margin:20px 0;border-left:8px solid #6366f1;">
+              <p><b>Objective:</b> ${task.title}</p>
+              <p><b>Urgency:</b> ${task.priority}</p>
+            </div>
+            <a href="${gLink}" style="background:#6366f1;color:white;padding:12px 25px;text-decoration:none;border-radius:12px;font-weight:bold;display:inline-block;">Add to Google Calendar</a>
+            <p style="margin-top:30px;font-size:10px;color:#94a3b8;text-align:center;">TaskPro Ecosystem • Developed by Yesaswi</p>
           </div>`
   };
-  transporter.sendMail(mailOptions).catch(e => console.log("Mail Fail"));
+  transporter.sendMail(mailOptions).catch(e => console.log("Email Error Skip"));
 };
 
 async function main() {
   try {
     await client.connect();
     db = client.db(dbName);
-    app.listen(process.env.PORT || 5000, "0.0.0.0", () => console.log("🚀 Server Ready"));
+    console.log("✅ CLOUD NODE ACTIVE");
+    app.listen(process.env.PORT || 5000, "0.0.0.0", () => console.log("🚀 Server Online"));
   } catch (error) { console.error(error); }
 }
 main();
 
-// AUTH ROUTES
+// --- AUTH & PROFILE SYNC ---
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -67,24 +74,14 @@ app.post("/api/auth/login", async (req, res) => {
   res.json({ token, user: { name: user.name, email: user.email, themeColor: user.themeColor, avatarSeed: user.avatarSeed } });
 });
 
-// --- PERMANENT PROFILE SYNC ROUTE ---
 app.put("/api/auth/update-profile", async (req, res) => {
-  try {
-    const token = req.header("x-auth-token");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { name, themeColor, avatarSeed } = req.body;
-    
-    await db.collection("users").updateOne(
-      { _id: new ObjectId(decoded.id) },
-      { $set: { name, themeColor, avatarSeed } }
-    );
-    res.json({ msg: "Profile synced to Cloud Atlas" });
-  } catch (err) {
-    res.status(500).json({ msg: "Cloud sync failed" });
-  }
+  const token = req.header("x-auth-token");
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  await db.collection("users").updateOne({ _id: new ObjectId(decoded.id) }, { $set: req.body });
+  res.json({ msg: "Cloud Synced" });
 });
 
-// TASK ROUTES
+// --- TASK HUB ---
 app.get("/api/tasks", async (req, res) => {
   const token = req.header("x-auth-token");
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
