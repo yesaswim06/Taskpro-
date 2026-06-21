@@ -326,11 +326,11 @@ const AppContent = () => {
           <Route path="/contact" element={<div className="max-w-xl mx-auto py-20 px-6 text-center text-white">
             <Mail size={60} className="mx-auto text-indigo-500 mb-8" />
             <h2 className="text-5xl font-black dark:text-white mb-4 uppercase transition-colors duration-500 tracking-tighter">Support Center</h2>
-            <p className="font-bold text-slate-500 mb-10 tracking-widest uppercase text-xs">Admin Node: myselfadmin123@gmail.com</p>
+            <p className="font-bold text-slate-500 mb-10 tracking-widest uppercase text-xs">EMAIL 📧: myselfadmin123@gmail.com</p>
             <form className="glass p-10 rounded-[3.5rem] space-y-4 shadow-3xl border dark:border-zinc-800 dark:bg-zinc-900" onSubmit={(e)=>{e.preventDefault(); alert("Signal Sent!")}}>
                <input className="w-full p-5 glass rounded-3xl outline-none dark:bg-black dark:text-white border dark:border-zinc-800" placeholder="Student Context" required />
                <textarea className="w-full p-5 glass rounded-3xl outline-none dark:text-white dark:bg-black border dark:border-zinc-800 h-40 font-bold" placeholder="Technical details..." required />
-               <button className="w-full bg-indigo-600 text-white p-5 rounded-3xl font-black shadow-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2"><Phone size={18}/> Contact Yesaswi</button>
+               <button className="w-full bg-indigo-600 text-white p-5 rounded-3xl font-black shadow-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2"><Phone size={18}/> Contact</button>
             </form>
           </div>} />
           
