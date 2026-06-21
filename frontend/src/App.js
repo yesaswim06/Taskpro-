@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Moon, Sun, Plus, Trash2, Bell, LogOut, Calendar, Zap, Search, Timer, 
   Trophy, Tag, Check, User, Palette, Star, X, Settings, Info, Mail, ExternalLink, 
-  Edit3, Quote, ChevronRight, MessageSquare, Users, Shield, Rocket, Cpu, Code, 
+  Edit3, Quote, MessageSquare, Users, Shield, Rocket, Cpu, Code, 
   ChevronDown, Fingerprint, Laptop, Phone, CheckCircle, Activity, Globe
 } from 'lucide-react';
 
@@ -56,7 +56,7 @@ const AppContent = () => {
 
   const welcomeData = {
     greet: new Date().getHours() < 12 ? "Good Morning" : new Date().getHours() < 17 ? "Good Afternoon" : "Good Evening",
-    quote: "Small progress is still progress."
+    quote: "Precision is the hallmark of student success."
   };
 
   const loadTasks = useCallback(async (token) => {
@@ -93,7 +93,7 @@ const AppContent = () => {
       setUser(res.data.user);
       setIsAuthOpen(false);
       navigate('/');
-    } catch (err) { alert("Auth Failed: Check connection"); }
+    } catch (err) { alert("Auth Failed: Check credentials"); }
   };
 
   const addTask = async (e) => {
@@ -105,21 +105,10 @@ const AppContent = () => {
     setTaskTitle(''); setTaskDesc(''); setAssignedTo('');
   };
 
-  // --- FIXED: DEFINED toggleStatus ---
   const toggleStatus = async (id, currentStatus) => {
     const s = currentStatus === 'Completed' ? 'Pending' : 'Completed';
     const token = localStorage.getItem('token');
     await axios.put(`${API}/tasks/${id}`, { status: s }, { headers: { 'x-auth-token': token } });
-    loadTasks(token);
-  };
-
-  // --- FIXED: DEFINED updateStatus ---
-  const updateStatus = async (id, currentStatus) => {
-    const stages = ['To-Do', 'In Progress', 'Review', 'Completed'];
-    const nextIdx = stages.indexOf(currentStatus) + 1;
-    if (nextIdx >= stages.length) return;
-    const token = localStorage.getItem('token');
-    await axios.put(`${API}/tasks/${id}`, { status: stages[nextIdx] }, { headers: {'x-auth-token': token} });
     loadTasks(token);
   };
 
@@ -148,7 +137,7 @@ const AppContent = () => {
             <div className="flex gap-4">
               <Link to="/contact" className="hidden md:flex text-xs font-black uppercase text-gray-500 hover:text-indigo-500 tracking-widest transition-all items-center gap-1"><Phone size={14}/> Support</Link>
               <button onClick={() => {setIsRegister(false); setIsAuthOpen(true);}} className="text-xs font-black uppercase text-gray-500 hover:text-white transition-all tracking-widest">Login</button>
-              <button onClick={() => {setIsRegister(true); setIsAuthOpen(true);}} className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all">GET STARTED</button>
+              <button onClick={() => {setIsRegister(true); setIsAuthOpen(true);}} className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-black text-xs uppercase shadow-xl hover:scale-105 active:scale-95 transition-all">GET STARTED</button>
             </div>
           ) : (
             <button onClick={() => setShowProfile(!showProfile)} className={`flex items-center gap-3 p-1 pr-4 bg-gray-100 dark:bg-zinc-900 rounded-full ring-2 ${themes[themeColor].split(' ')[4]} transition-all shadow-xl`}>
@@ -172,7 +161,7 @@ const AppContent = () => {
               <X className="absolute right-8 top-8 cursor-pointer text-gray-500 hover:text-red-500" onClick={() => setIsAuthOpen(false)} />
               <Zap size={44} className="mx-auto text-indigo-500 mb-4" fill="currentColor"/><h2 className="text-4xl font-black dark:text-white uppercase mb-8">{isRegister ? "Join" : "Welcome"}</h2>
               <form onSubmit={handleAuth} className="space-y-4 text-left">
-                {isRegister && <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-500 ml-3">Student Name</label><input className="w-full p-5 bg-gray-100/10 dark:bg-black rounded-3xl outline-none dark:text-white border border-white/10 focus:border-indigo-500 transition-all shadow-inner font-bold" placeholder="Yesaswi" onChange={e => setAuthForm({...authForm, name: e.target.value})} required /></div>}
+                {isRegister && <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-500 ml-3">Full Student Name</label><input className="w-full p-5 bg-gray-100/10 dark:bg-black rounded-3xl outline-none dark:text-white border border-white/10 focus:border-indigo-500 transition-all shadow-inner font-bold" placeholder="Yesaswi" onChange={e => setAuthForm({...authForm, name: e.target.value})} required /></div>}
                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-500 ml-3">Email</label><input className="w-full p-5 bg-gray-100/10 dark:bg-black rounded-3xl outline-none dark:text-white border border-white/10 focus:border-indigo-500 transition-all shadow-inner font-bold" placeholder="student@university.edu" type="email" onChange={e => setAuthForm({...authForm, email: e.target.value})} required /></div>
                 <div className="space-y-1"><label className="text-[10px] font-black uppercase text-gray-500 ml-3">Password</label><input className="w-full p-5 bg-gray-100/10 dark:bg-black rounded-3xl outline-none dark:text-white border border-white/10 focus:border-indigo-500 transition-all shadow-inner font-bold" placeholder="••••••••" type="password" onChange={e => setAuthForm({...authForm, password: e.target.value})} required /></div>
                 <button className={`w-full ${themes[themeColor].split(' ')[1]} text-white p-5 rounded-[2rem] font-black shadow-xl mt-6 active:scale-95 transition-all tracking-widest uppercase text-xs`}>{isRegister ? "Initialize Workspace" : "Access Workspace"}</button>
@@ -187,7 +176,7 @@ const AppContent = () => {
       <AnimatePresence>
         {showProfile && user && (
           <motion.div initial={{ opacity: 0, x: 300 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 300 }} className="fixed right-0 top-0 h-full w-80 glass p-10 z-[100] border-l dark:border-zinc-800 shadow-2xl dark:bg-zinc-950 flex flex-col">
-            <div className="flex justify-between items-center mb-10"><h4 className="font-black text-xs uppercase tracking-widest text-gray-400 flex items-center gap-2"><Settings size={14}/> Settings Hub</h4><X size={24} className="cursor-pointer hover:text-red-500" onClick={() => setShowProfile(false)} /></div>
+            <div className="flex justify-between items-center mb-10"><h4 className="font-black text-xs uppercase tracking-widest text-gray-400 flex items-center gap-2"><Settings size={14}/> Node Settings</h4><X size={24} className="cursor-pointer hover:text-red-500" onClick={() => setShowProfile(false)} /></div>
             <div className="space-y-10 flex-1 overflow-y-auto">
               <div className="space-y-4">
                 <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Update Identity</label>
@@ -200,8 +189,8 @@ const AppContent = () => {
                 </div>
               </div>
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2"><Star size={12}/> Avatar Selection</label>
-                <button onClick={() => setShowAvatarPicker(!showAvatarPicker)} className="w-full p-2 bg-indigo-500/10 text-indigo-500 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 tracking-widest shadow-lg">{showAvatarPicker ? "Close Gallery" : "Open Gallery"}</button>
+                <label className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-2"><Star size={12}/> Avatar Hub</label>
+                <button onClick={() => setShowAvatarPicker(!showAvatarPicker)} className="w-full p-2 bg-indigo-500/10 text-indigo-500 rounded-xl text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 tracking-widest shadow-lg">{showAvatarPicker ? "Close Gallery" : "Change Cartoon"}</button>
                 {showAvatarPicker && (
                   <div className="grid grid-cols-4 gap-2 mb-6 animate-in zoom-in">
                     {avatars.map(a => <button key={a} onClick={() => {setSelectedAvatar(a); syncProfile(user.name, themeColor, a); setShowAvatarPicker(false);}} className={`p-1 rounded-xl transition-all ${selectedAvatar === a ? 'ring-2 ring-white bg-indigo-500' : 'bg-slate-200 dark:bg-zinc-800'}`}><img src={`https://api.dicebear.com/7.x/pixel-art/svg?seed=${a}`} alt="avatar"/></button>)}
@@ -241,7 +230,7 @@ const AppContent = () => {
                  <motion.div animate={{y: [0, 10, 0]}} transition={{repeat: Infinity}} className="absolute bottom-10 left-1/2 -translate-x-1/2 text-gray-400"><ChevronDown size={32}/></motion.div>
               </section>
 
-              {/* Scroll-Down Visual Feature Breakdown */}
+              {/* Technical Breakdown with Real Professional Images */}
               <section className="min-h-screen py-32 px-6 max-w-7xl mx-auto flex flex-col gap-32">
                  <div className="grid md:grid-cols-2 gap-20 items-center">
                     <div className="space-y-6">
@@ -268,7 +257,7 @@ const AppContent = () => {
               <div className="w-full lg:w-1/3 flex flex-col gap-8">
                 <div className={`p-10 rounded-[3.5rem] text-white shadow-3xl relative overflow-hidden flex flex-col justify-between min-h-[300px] ${themes[themeColor].split(' ')[1]}`}>
                   <div><h2 className="text-4xl font-black italic mb-2 tracking-tighter leading-none">{welcomeData.greet}!</h2><p className="text-[11px] font-bold uppercase tracking-widest opacity-80 flex items-center gap-2 mb-10 leading-relaxed"><Quote size={14}/> {welcomeData.quote}</p></div>
-                  <div><div className="w-full bg-white/20 h-2.5 rounded-full overflow-hidden mb-4 shadow-inner"><motion.div animate={{ width: `${progress}%` }} className="bg-white h-full shadow-[0_0_20px_white]" /></div><p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><Trophy size={14} /> Mastery: {Math.round(progress)}%</p></div>
+                  <div><div className="w-full bg-white/20 h-2.5 rounded-full overflow-hidden mb-4 shadow-inner"><motion.div animate={{ width: `${progress}%` }} className="bg-white h-full shadow-[0_0_20px_white]" /></div><p className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2"><Trophy size={14} /> Mastery Score: {Math.round(progress)}%</p></div>
                   <Zap size={140} className="absolute -right-6 -bottom-6 opacity-10 rotate-12" />
                 </div>
                 <form onSubmit={addTask} className="glass p-8 rounded-[3.5rem] space-y-4 border dark:border-white/5 shadow-2xl dark:bg-zinc-950 flex-1">
@@ -290,13 +279,13 @@ const AppContent = () => {
                 <div className="flex flex-col md:flex-row gap-8 justify-between items-center bg-white dark:bg-zinc-900/50 p-10 rounded-[4rem] shadow-2xl border dark:border-zinc-800">
                   <div className="relative w-full md:w-[30rem]"><Search className="absolute left-8 top-6 text-slate-400" size={24} /><input placeholder="Search projects..." className="w-full pl-20 p-6 glass rounded-full outline-none dark:text-white border-2 border-transparent focus:border-indigo-500 shadow-inner dark:bg-black" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} /></div>
                   <div className="flex bg-gray-100 dark:bg-zinc-800 px-10 py-5 rounded-full border dark:border-white/5 gap-8 shadow-inner items-center">
-                     <div className="flex items-center gap-4"><Bell size={24} className={progress === 100 ? "text-green-500" : "text-gray-500"} /><Timer size={28} className={isTimerRunning ? "animate-pulse text-indigo-500" : "text-gray-500"}/><span className="font-mono font-black text-3xl leading-none dark:text-white">{Math.floor(timeLeft/60)}:{timeLeft%60 < 10 ? '0' : ''}{timeLeft%60}</span></div>
+                     <div className="flex items-center gap-4"><Bell size={24} className={progress === 100 ? "text-green-500" : "text-gray-500"} /><Timer size={28} className={isTimerRunning ? "animate-pulse text-indigo-500" : "text-gray-500"}/><span className="font-mono font-black text-2xl leading-none dark:text-white">{Math.floor(timeLeft/60)}:{timeLeft%60 < 10 ? '0' : ''}{timeLeft%60}</span></div>
                      <button onClick={() => setIsTimerRunning(!isTimerRunning)} className={`text-[10px] font-black uppercase px-6 py-2.5 rounded-2xl ${themes[themeColor].split(' ')[1]} text-white shadow-xl shadow-current/20 active:scale-95 transition-all`}>{isTimerRunning ? "Stop" : "Focus"}</button>
                   </div>
                 </div>
                 <div className="flex bg-gray-200 dark:bg-zinc-900 p-2 rounded-3xl w-max shadow-inner border dark:border-white/5">
                     {['All', 'Pending', 'Completed'].map(f => (
-                      <button key={f} onClick={() => setFilter(f)} className={`px-12 py-4 rounded-2xl text-xs font-black uppercase transition-all ${filter === f ? 'bg-white dark:bg-zinc-700 shadow-3xl ' + themes[themeColor].split(' ')[0] : 'text-slate-500 hover:text-slate-200'}`}>{f}</button>
+                      <button key={f} onClick={() => setFilter(f)} className={`px-10 py-3 rounded-2xl text-[10px] font-black uppercase transition-all ${filter === f ? 'bg-white dark:bg-zinc-700 shadow-3xl ' + themes[themeColor].split(' ')[0] : 'text-slate-500 hover:text-slate-200'}`}>{f}</button>
                     ))}
                 </div>
                 <div className="space-y-6 pb-20">
@@ -306,7 +295,7 @@ const AppContent = () => {
                       const pColor = task.priority === 'High' ? 'border-rose-500' : task.priority === 'Medium' ? 'border-amber-500' : 'border-emerald-500';
                       const gUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${task.dueDate.replace(/-/g, '')}/${task.dueDate.replace(/-/g, '')}`;
                       return (
-                        <motion.div key={task._id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className={`glass p-10 rounded-[3.5rem] flex flex-col md:flex-row md:items-center justify-between gap-8 border-l-[18px] ${pColor} ${task.status === 'Completed' ? 'opacity-40 grayscale blur-[0.5px]' : ''} hover:shadow-4xl transition-all relative overflow-hidden shadow-2xl dark:bg-zinc-900`}>
+                        <motion.div key={task._id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }} className={`glass p-10 rounded-[3.5rem] flex flex-col gap-8 border-l-[18px] ${pColor} ${task.status === 'Completed' ? 'opacity-40 grayscale blur-[0.5px]' : ''} hover:shadow-4xl transition-all relative overflow-hidden shadow-2xl dark:bg-zinc-900`}>
                           <div className="flex items-start gap-10 flex-1">
                              <button onClick={() => toggleStatus(task._id, task.status)} className={`p-7 rounded-[2.5rem] shadow-2xl transition-all ${task.status === 'Completed' ? themes[themeColor].split(' ')[1] + ' text-white scale-90 shadow-current/40' : 'bg-gray-100 dark:bg-black text-transparent border-2 dark:border-zinc-800 hover:text-indigo-400 shadow-inner'}`}><CheckCircle size={40} strokeWidth={2}/></button>
                              <div className="flex flex-col flex-1"><div className="flex items-center gap-3 mb-1"><h4 className="text-3xl font-black italic dark:text-white uppercase tracking-tighter leading-none">{task.title}</h4><span className="text-[10px] font-black uppercase px-2 py-0.5 bg-slate-100 dark:bg-black rounded dark:text-zinc-600">{task.status}</span></div><p className="text-sm text-slate-500 dark:text-zinc-400 font-bold mb-6 leading-relaxed max-w-lg">{task.description || "Node objective pending details..."}</p><div className="flex flex-wrap gap-5 items-center"><span className={`text-[10px] font-black px-5 py-2 rounded-full bg-slate-100 dark:bg-black text-slate-500 border dark:border-zinc-800 uppercase tracking-widest flex items-center gap-2 ${isOverdue ? 'bg-red-500 text-white animate-pulse' : ''}`}><Tag size={12}/> Due: {new Date(task.dueDate).toLocaleDateString()}</span><a href={gUrl} target="_blank" rel="noreferrer" className={`text-[10px] font-black uppercase text-indigo-500 hover:underline flex items-center gap-1.5 font-bold`}><ExternalLink size={14}/> Sync Calendar</a></div></div>
@@ -315,8 +304,6 @@ const AppContent = () => {
                             <button onClick={() => updateStatus(task._id, task.status)} className="p-3 bg-indigo-500/10 text-indigo-500 rounded-xl hover:bg-indigo-500 hover:text-white transition-all"><ChevronRight size={20}/></button>
                             <button onClick={async () => { await axios.delete(`${API}/tasks/${task._id}`, { headers: {'x-auth-token': localStorage.getItem('token')} }); loadTasks(localStorage.getItem('token')); }} className="p-4 rounded-2xl text-red-600 bg-red-500/10 hover:bg-red-600 hover:text-white transition-all self-center shadow-xl shadow-red-500/10 active:scale-90"><Trash2 size={28}/></button>
                           </div>
-                          
-                          {/* COLLABORATION HUB */}
                           <div className="mt-4 border-t dark:border-zinc-800 pt-8 w-full">
                              <h5 className="text-[10px] font-black uppercase text-gray-500 mb-6 flex items-center gap-2 tracking-widest font-bold"><MessageSquare size={14}/> Collaboration Hub</h5>
                              <div className="space-y-4 mb-6">
@@ -341,13 +328,11 @@ const AppContent = () => {
             <h2 className="text-5xl font-black dark:text-white mb-4 uppercase transition-colors duration-500 tracking-tighter">Support Center</h2>
             <p className="font-bold text-slate-500 mb-10 tracking-widest uppercase text-xs">Admin Node: myselfadmin123@gmail.com</p>
             <form className="glass p-10 rounded-[3.5rem] space-y-4 shadow-3xl border dark:border-zinc-800 dark:bg-zinc-900" onSubmit={(e)=>{e.preventDefault(); alert("Signal Sent!")}}>
-               <input className="w-full p-5 glass rounded-3xl outline-none dark:bg-black dark:text-white border dark:border-zinc-800 focus:border-indigo-500 transition-all font-bold" placeholder="Student Context" required />
+               <input className="w-full p-5 glass rounded-3xl outline-none dark:bg-black dark:text-white border dark:border-zinc-800" placeholder="Student Context" required />
                <textarea className="w-full p-5 glass rounded-3xl outline-none dark:text-white dark:bg-black border dark:border-zinc-800 h-40 font-bold" placeholder="Technical details..." required />
                <button className="w-full bg-indigo-600 text-white p-5 rounded-3xl font-black shadow-xl uppercase tracking-widest text-sm flex items-center justify-center gap-2"><Phone size={18}/> Contact Yesaswi</button>
             </form>
           </div>} />
-          
-          <Route path="/about" element={<Navigate to="/" />} />
         </Routes>
       </main>
 
