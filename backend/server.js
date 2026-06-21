@@ -8,8 +8,6 @@ import nodemailer from "nodemailer";
 
 dotenv.config();
 const app = express();
-
-// --- 1. MIDDLEWARE (INDUSTRIAL CORS) ---
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
@@ -18,7 +16,6 @@ const client = new MongoClient(url);
 const dbName = "StudentTaskDB";
 let db;
 
-// --- 2. GMAIL ENGINE (BACKGROUND DISPATCH) ---
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -29,39 +26,31 @@ const transporter = nodemailer.createTransport({
 
 const sendTaskEmail = async (toEmail, senderName, task) => {
   const gLink = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&dates=${task.dueDate.replace(/-/g, '')}/${task.dueDate.replace(/-/g, '')}`;
-  
   const mailOptions = {
     from: `"TaskPro Manager" <${process.env.EMAIL_USER}>`,
-    to: toEmail, // Sends to the person delegated
+    to: toEmail,
     subject: `🚀 TaskPro: New Node assigned to you by ${senderName}`,
-    html: `
-      <div style="font-family:sans-serif; padding:20px; border-radius:20px; border:1px solid #6366f1; max-width:600px;">
-        <h2 style="color:#6366f1;">Action Required!</h2>
-        <p><b>${senderName}</b> has delegated a new task node to you in the TaskPro ecosystem.</p>
-        <div style="background:#f8fafc; padding:20px; border-radius:15px; margin:20px 0; border-left:10px solid #6366f1;">
-          <p><strong>Objective:</strong> ${task.title}</p>
-          <p><strong>Urgency:</strong> ${task.priority}</p>
-          <p><strong>Details:</strong> ${task.description || "View in dashboard"}</p>
-        </div>
-        <a href="${gLink}" style="background:#6366f1; color:white; padding:12px 25px; text-decoration:none; border-radius:10px; font-weight:bold; display:inline-block;">Add to My Calendar</a>
-      </div>`
+    html: `<div style="font-family:sans-serif;padding:20px;border-radius:20px;border:1px solid #6366f1;">
+            <h2>Action Required!</h2>
+            <p><b>${senderName}</b> has delegated a new task node to you.</p>
+            <p>Objective: <b>${task.title}</b></p>
+            <p>Priority: ${task.priority}</p>
+            <a href="${gLink}" style="background:#6366f1;color:white;padding:12px 25px;text-decoration:none;border-radius:10px;display:inline-block;">Add to Calendar</a>
+          </div>`
   };
-  transporter.sendMail(mailOptions).catch(err => console.log("Email Error"));
+  transporter.sendMail(mailOptions).catch(e => console.log("Mail Fail"));
 };
 
-// --- 3. STARTUP ---
 async function main() {
   try {
     await client.connect();
     db = client.db(dbName);
-    console.log("✅ CLOUD DB ACTIVE");
-    app.get("/", (req, res) => res.send("TaskPro API v4.0 Live ✅"));
     app.listen(process.env.PORT || 5000, "0.0.0.0", () => console.log("🚀 Server Ready"));
   } catch (error) { console.error(error); }
 }
 main();
 
-// --- 4. AUTH ROUTES ---
+// AUTH ROUTES
 app.post("/api/auth/register", async (req, res) => {
   const { name, email, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -85,7 +74,7 @@ app.put("/api/auth/update-profile", async (req, res) => {
   res.json({ msg: "Synced" });
 });
 
-// --- 5. TASK & COLLABORATION ROUTES ---
+// TASK ROUTES
 app.get("/api/tasks", async (req, res) => {
   const token = req.header("x-auth-token");
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -94,29 +83,14 @@ app.get("/api/tasks", async (req, res) => {
 });
 
 app.post("/api/tasks", async (req, res) => {
-  try {
-    const token = req.header("x-auth-token");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await db.collection("users").findOne({ _id: new ObjectId(decoded.id) });
-
-    const newTask = { 
-      ...req.body, 
-      userId: new ObjectId(decoded.id), 
-      status: "To-Do",
-      comments: [],
-      createdAt: new Date() 
-    };
-
-    const result = await db.collection("tasks").insertOne(newTask);
-    const savedTask = { ...newTask, _id: result.insertedId };
-    
-    res.json(savedTask); 
-
-    // COLLABORATION WORKFLOW: If assigned to an email, send them the notification
-    const recipientEmail = req.body.assignedTo || user.email;
-    sendTaskEmail(recipientEmail, user.name, savedTask);
-
-  } catch (err) { res.status(500).send("Server Error"); }
+  const token = req.header("x-auth-token");
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  const user = await db.collection("users").findOne({ _id: new ObjectId(decoded.id) });
+  const newTask = { ...req.body, userId: new ObjectId(decoded.id), status: "To-Do", comments: [], createdAt: new Date() };
+  await db.collection("tasks").insertOne(newTask);
+  res.json(newTask);
+  const recipient = req.body.assignedTo || user.email;
+  sendTaskEmail(recipient, user.name, newTask);
 });
 
 app.put("/api/tasks/:id", async (req, res) => {
