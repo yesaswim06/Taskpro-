@@ -9,7 +9,7 @@ import {
   ChevronDown, Fingerprint, Laptop, Phone, CheckCircle, Activity, Globe, RotateCcw
 } from 'lucide-react';
 
-const API = "https://taskpro.up.railway.app/api";
+const API = "https://taskpro-3ft1.onrender.com/api";
 
 const AppContent = () => {
   const navigate = useNavigate();
