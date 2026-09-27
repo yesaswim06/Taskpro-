@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API = axios.create({ baseURL: "https://taskpro-backend.onrender.com/api" });
+const API = axios.create({ baseURL: "https://taskpro-3ft1.onrender.com/api" });
 
 // Automatically add the token to every request
 API.interceptors.request.use((req) => {
