@@ -8,8 +8,12 @@ import nodemailer from "nodemailer";
 
 dotenv.config();
 const app = express();
-app.use(cors({ origin: "*" }));
+app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
 app.use(express.json());
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", service: "TaskPro Backend" });
+});
 
 const url = process.env.MONGO_URI;
 const client = new MongoClient(url);
